@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daftar Barang</title>
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        padding: 20px;
+    }
+    #menu, #barangListDisplay, #alphabeticalList {
+        display: none;
+        padding: 20px;
+        min-height: 100vh;
+        color: white;
+    }
+    #menu {
+        background-color: #333; /* Warna latar belakang untuk menu */
+    }
+    #barangListDisplay {
+        background-color: #444; /* Warna latar belakang untuk daftar barang */
+    }
+    #alphabeticalList {
+        background-color: #555; /* Warna latar belakang untuk daftar barang A-Z */
+    }
+    button {
+        padding: 10px 20px;
+        margin: 10px;
+        border: none;
+        background-color: #666;
+        color: white;
+        cursor: pointer;
+        border-radius: 5px;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    th, td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+    }
+    th {
+        background-color: #f2f2f2;
+        color: black; /* Warna font hitam untuk header tabel */
+    }
+    td {
+        color: white; /* Warna font putih untuk sel data tabel */
+    }
+    ul {
+        list-style-type: none;
+        padding: 0;
+    }
+    li {
+        padding: 5px;
+    }
+    input[type="text"] {
+        width: 100%;
+        padding: 6px 10px;
+        box-sizing: border-box;
+        background-color: transparent; /* Menghapus latar belakang */
+        color: white; /* Warna teks putih */
+    }
+</style>
+<script>
+    let barangList = [];
+
+    function saveDataToLocalStorage() {
+        localStorage.setItem('barangList', JSON.stringify(barangList));
+    }
+
+    function loadDataFromLocalStorage() {
+        let storedData = localStorage.getItem('barangList');
+        if (storedData) {
+            barangList = JSON.parse(storedData);
+            displayBarangList(); // Memperbarui tampilan dengan data yang dimuat
+        }
+    }
+
+    function displayMenu() {
+        document.getElementById("menu").style.display = "block";
+        document.getElementById("barangListDisplay").style.display = "none";
+        document.getElementById("alphabeticalList").style.display = "none";
+    }
+
+    function addBarang() {
+        let namaBarang = prompt("Masukkan nama barang:");
+        if (namaBarang) {
+            let hargaBarang = prompt("Masukkan harga barang (Rp):");
+            if (validateHarga(hargaBarang)) {
+                barangList.push({ nama: namaBarang, harga: formatHarga(hargaBarang) });
+                alert(`'${namaBarang}' dengan harga Rp ${formatHarga(hargaBarang)} telah ditambahkan ke daftar.`);
+                saveDataToLocalStorage(); // Simpan data ke localStorage setelah menambah barang
+            } else {
+                alert("Mohon masukkan angka yang valid untuk harga barang.");
+            }
+        }
+    }
+
+    function removeBarang() {
+        let namaBarang = prompt("Masukkan nama barang yang ingin dihapus:");
+        let index = barangList.findIndex(barang => barang.nama === namaBarang);
+        if (index !== -1) {
+            barangList.splice(index, 1);
+            alert(`'${namaBarang}' telah dihapus dari daftar.`);
+            saveDataToLocalStorage(); // Simpan data ke localStorage setelah menghapus barang
+        } else {
+            alert(`'${namaBarang}' tidak ada dalam daftar.`);
+        }
+    }
+
+    function displayBarangList() {
+        let totalHargaBarang = 0;
+        let tableHtml = `
+            <table>
+                <tr>
+                    <th>No</th>
+                    <th>Nama Barang</th>
+                    <th>Harga Barang (Rp)</th>
+                </tr>
+        `;
+        if (barangList.length > 0) {
+            barangList.forEach((barang, index) => {
+                tableHtml += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${barang.nama}</td>
+                        <td><input type="text" onchange="updateHarga(${index}, this.value)" value="${barang.harga}"></td>
+                    </tr>
+                `;
+                totalHargaBarang += unformatHarga(barang.harga);
+            });
+        } else {
+            tableHtml += `
+                <tr>
+                    <td colspan="3">Daftar barang kosong.</td>
+                </tr>
+            `;
+        }
+        tableHtml += `
+            <tr>
+                <td colspan="2"><strong>Total Harga Barang</strong></td>
+                <td><strong>Rp ${formatHarga(totalHargaBarang.toString())}</strong></td>
+            </tr>
+        `;
+        tableHtml += "</table>";
+        document.getElementById("barangList").innerHTML = tableHtml;
+        document.getElementById("menu").style.display = "none";
+        document.getElementById("barangListDisplay").style.display = "block";
+    }
+
+    function displayAlphabeticalList() {
+        let alphabeticalList = barangList.slice().sort((a, b) => a.nama.localeCompare(b.nama));
+        let listHtml = "";
+        let currentLetter = "";
+
+        if (alphabeticalList.length > 0) {
+            alphabeticalList.forEach(barang => {
+                let firstLetter = barang.nama.charAt(0).toUpperCase();
+                if (firstLetter !== currentLetter) {
+                    if (currentLetter !== "") {
+                        listHtml += "</ul>";
+                    }
+                    currentLetter = firstLetter;
+                    listHtml += `<h2>${currentLetter}</h2><ul>`;
+                }
+                let originalIndex = barangList.findIndex(b => b.nama === barang.nama) + 1;
+                listHtml += `<li>${originalIndex}. ${barang.nama}</li>`;
+            });
+            listHtml += "</ul>";
+        } else {
+            listHtml += "<p>Daftar barang kosong.</p>";
+        }
+
+        document.getElementById("alphabeticalBarangList").innerHTML = listHtml;
+        document.getElementById("menu").style.display = "none";
+        document.getElementById("alphabeticalList").style.display = "block";
+    }
+
+    function goBack() {
+        displayMenu();
+    }
+
+    function updateHarga(index, value) {
+        barangList[index].harga = formatHarga(value);
+        displayBarangList(); // Update total harga setiap kali ada perubahan harga
+        saveDataToLocalStorage(); // Simpan data ke localStorage setelah memperbarui harga barang
+    }
+
+    function formatHarga(value) {
+        return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    }
+
+    function unformatHarga(value) {
+        return parseFloat(value.replace(/\./g, "").replace(",", "."));
+    }
+
+    function validateHarga(value) {
+        return !isNaN(unformatHarga(value)) && isFinite(unformatHarga(value));
+    }
+
+    // Panggil loadDataFromLocalStorage saat halaman dimuat
+    window.onload = function() {
+        displayMenu(); // Tampilkan menu saat halaman dimuat
+        loadDataFromLocalStorage(); // Muat data dari localStorage
+    };
+</script>
+</head>
+<body>
+<div id="menu">
+    <h1>Daftar Barang</h1>
+    <button onclick="addBarang()">Tambah Barang</button>
+    <button onclick="removeBarang()">Hapus Barang</button>
+    <button onclick="displayBarangList()">Tampilkan Daftar Barang</button>
+    <button onclick="displayAlphabeticalList()">Lihat Barang dari A-Z</button>
+</div>
+<div id="barangListDisplay">
+    <h1>Daftar Barang</h1>
+    <div id="barangList"></div>
+    <button onclick="goBack()">Kembali</button>
+</div>
+<div id="alphabeticalList">
+    <h1>Daftar Barang dari A-Z</h1>
+    <div id="alphabeticalBarangList"></div>
+    <button onclick="goBack()">Kembali</button>
+</div>
+</body>
+</html>
